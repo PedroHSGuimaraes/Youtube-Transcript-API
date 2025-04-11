@@ -50,11 +50,11 @@ This project provides a FastAPI-based service for transcribing YouTube videos. I
       }
       ```
 
-## Example
+## DEMO
 
 You can test the API using `curl` or any HTTP client like Postman:
 ```bash
-curl -X POST "http://127.0.0.1:8000/transcribe" \
+curl -X POST "https://yt-transcript.leapcell.app/transcribe" \
 -H "Content-Type: application/json" \
 -d '{"url": "https://www.youtube.com/watch?v=example", "language": "pt"}'
 ```
