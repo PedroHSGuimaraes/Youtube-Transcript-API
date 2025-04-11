@@ -4,17 +4,19 @@ from langchain_community.document_loaders import YoutubeLoader
 
 app = FastAPI(title="API de Transcrição de Vídeo do YouTube")
 
-class HealthCheckRequest(BaseModel):
-    pass
 class HealthCheckResponse(BaseModel):
     status: str
+
 @app.get("/", response_model=HealthCheckResponse)
-async def health_check(request: HealthCheckRequest):
+async def health_check():
     """
     Rota de verificação de saúde da API.
     Retorna um status 200 se a API estiver funcionando corretamente.
     """
-    return HealthCheckResponse(status="Healthy")
+    try:
+        return HealthCheckResponse(status="Healthy")
+    except Exception:
+        return HealthCheckResponse(status="Unhealthy")
 
 class TranscriptionRequest(BaseModel):
     url: str
