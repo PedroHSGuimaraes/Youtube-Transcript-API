@@ -4,10 +4,9 @@ import yt_dlp
 import re
 import logging
 import traceback
-import tempfile
 import os
-import subprocess
 import json
+import random  # Para user-agent rotativo
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -51,6 +50,27 @@ def extract_video_id(url: str) -> str:
 
 def get_subtitles_with_ytdlp(video_url: str, language: str = "pt") -> str:
     """Obtém a legenda mais completa para o idioma especificado usando yt-dlp."""
+    cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
+    
+    if not os.path.exists(cookies_path):
+        error_msg = (
+            "Arquivo cookies.txt não encontrado. "
+            "Exporte cookies do YouTube usando extensão 'Get cookies.txt LOCALLY' no Chrome, "
+            "logado em youtube.com, e salve como cookies.txt no diretório do script. "
+            "Veja https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp para detalhes."
+        )
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+    
+    logger.info(f"Usando arquivo de cookies em: {cookies_path}")
+    
+    # User-agents rotativos para simular navegador real e reduzir detecção
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36"
+    ]
+    
     ydl_opts = {
         'writesubtitles': True,
         'writeautomaticsub': True,
@@ -59,17 +79,9 @@ def get_subtitles_with_ytdlp(video_url: str, language: str = "pt") -> str:
         'quiet': True,
         'no_warnings': True,
         'extract_flat': False,
+        'cookiefile': cookies_path,
+        'user_agent': random.choice(user_agents),  # Rotação de UA
     }
-
-    # Tenta usar o arquivo cookies.txt se ele existir
-    cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
-    if os.path.exists(cookies_path):
-        logger.info(f"Usando arquivo de cookies em: {cookies_path}")
-        ydl_opts['cookiefile'] = cookies_path
-    else:
-        # Como fallback, tenta usar os cookies do navegador
-        logger.info("Arquivo cookies.txt não encontrado. Tentando usar cookies do navegador (Chrome).")
-        ydl_opts['cookies_from_browser'] = ('chrome',)
     
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -113,7 +125,7 @@ def get_subtitles_with_ytdlp(video_url: str, language: str = "pt") -> str:
             # Terceira opção: legendas em inglês para traduzir
             if 'en' in subtitles or 'en' in automatic_captions:
                 logger.info("Nenhuma legenda em português encontrada. Tentando inglês.")
-                subs_dict = subtitles.get('en', automatic_captions.get('en', []))
+                subs_dict = subtitles.get('en', []) + automatic_captions.get('en', [])
                 for sub in subs_dict:
                     if sub.get('ext') == 'json3':
                         sub_data = ydl.urlopen(sub['url']).read().decode('utf-8')
@@ -153,8 +165,8 @@ def parse_json3_subtitles(json_data: str) -> str:
                                 texts.append(seg['utf8'])
                     # Extrai texto de outras chaves comuns
                     for key in ['aAppend', 'wWinId']:
-                         if key in e and isinstance(e[key], str):
-                                texts.append(e[key])
+                        if key in e and isinstance(e[key], str):
+                            texts.append(e[key])
                 elif isinstance(e, list):
                     for item in e:
                         extract_text_from_event(item)
@@ -242,11 +254,21 @@ async def test_video(video_id: str):
         "errors": []
     }
     
+    cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
+    
+    if not os.path.exists(cookies_path):
+        results["errors"].append({
+            "error": "cookies.txt ausente. Exporte cookies do YouTube e coloque no diretório.",
+            "type": "ConfigurationError"
+        })
+        return results
+    
     try:
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
             'extract_flat': False,
+            'cookiefile': cookies_path,
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
