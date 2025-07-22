@@ -59,6 +59,7 @@ def get_subtitles_with_ytdlp(video_url: str, language: str = "pt") -> str:
         'quiet': True,
         'no_warnings': True,
         'extract_flat': False,
+        'cookies_from_browser': ('chrome',),  # Tenta usar cookies do Chrome
     }
     
     try:
