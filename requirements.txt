@@ -1,4 +1,4 @@
- fastapi
- uvicorn
- langchain_community
- youtube-transcript-api
+fastapi
+uvicorn
+youtube-transcript-api>=0.6.0
+langchain-community
