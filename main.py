@@ -59,8 +59,17 @@ def get_subtitles_with_ytdlp(video_url: str, language: str = "pt") -> str:
         'quiet': True,
         'no_warnings': True,
         'extract_flat': False,
-        'cookies_from_browser': ('chrome',),  # Tenta usar cookies do Chrome
     }
+
+    # Tenta usar o arquivo cookies.txt se ele existir
+    cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
+    if os.path.exists(cookies_path):
+        logger.info(f"Usando arquivo de cookies em: {cookies_path}")
+        ydl_opts['cookiefile'] = cookies_path
+    else:
+        # Como fallback, tenta usar os cookies do navegador
+        logger.info("Arquivo cookies.txt não encontrado. Tentando usar cookies do navegador (Chrome).")
+        ydl_opts['cookies_from_browser'] = ('chrome',)
     
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
