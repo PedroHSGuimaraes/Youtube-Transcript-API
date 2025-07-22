@@ -59,8 +59,10 @@ def get_subtitles_with_ytdlp(video_url: str, language: str = "pt") -> str:
         'quiet': True,
         'no_warnings': True,
         'extract_flat': False,
-        # Tenta usar os cookies do Chrome. Requer que o volume esteja montado.
-        'cookies_from_browser': ('chrome',), 
+        # Adiciona um User-Agent para simular um navegador. Pode ajudar em alguns casos.
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'
+        },
     }
 
     try:
